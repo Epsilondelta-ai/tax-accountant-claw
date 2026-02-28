@@ -124,6 +124,86 @@ describe("register-expense", () => {
       expect(body.PurchasesList[0].BulkDatas.CARD_CD).toBe("신한카드");
     });
 
+    it("includes user in description when provided", async () => {
+      const loginResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: { SESSION_ID: "sess_user", ZONE: "Q" } },
+        }),
+      };
+      const purchaseResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: {} },
+        }),
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(loginResponse).mockResolvedValueOnce(purchaseResponse)
+      );
+
+      const { registerExpense } = await import("../register-expense.js");
+      const result = await registerExpense({
+        date: "2026-02-28",
+        amount: 45000,
+        vendor: "스타벅스강남점",
+        description: "거래처 미팅 식대",
+        user: "홍길동",
+        accountCode: "접대비",
+        vatIncluded: true,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.user).toBe("홍길동");
+      expect(result.description).toBe("거래처 미팅 식대");
+
+      // Verify the purchase slip description includes [user]
+      const purchaseCall = vi.mocked(fetch).mock.calls[1];
+      const body = JSON.parse((purchaseCall[1] as RequestInit).body as string);
+      expect(body.PurchasesList[0].BulkDatas.PROD_DES).toBe("[홍길동] 거래처 미팅 식대");
+      expect(body.PurchasesList[0].BulkDatas.ACCT_CD).toBe("접대비");
+    });
+
+    it("omits user prefix in description when user not provided", async () => {
+      const loginResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: { SESSION_ID: "sess_nouser", ZONE: "Q" } },
+        }),
+      };
+      const purchaseResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: {} },
+        }),
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(loginResponse).mockResolvedValueOnce(purchaseResponse)
+      );
+
+      const { registerExpense } = await import("../register-expense.js");
+      await registerExpense({
+        date: "2026-02-28",
+        amount: 45000,
+        vendor: "스타벅스",
+        description: "커피",
+        vatIncluded: true,
+      });
+
+      const purchaseCall = vi.mocked(fetch).mock.calls[1];
+      const body = JSON.parse((purchaseCall[1] as RequestInit).body as string);
+      expect(body.PurchasesList[0].BulkDatas.PROD_DES).toBe("커피");
+    });
+
     it("handles VAT-excluded amounts", async () => {
       const loginResponse = {
         ok: true,
@@ -296,6 +376,56 @@ describe("register-expense", () => {
       const output = JSON.parse(logSpy.mock.calls[0][0]);
       expect(output.success).toBe(true);
       expect(output.vendor).toBe("스타벅스강남점");
+    });
+
+    it("passes --user flag to result", async () => {
+      const loginResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: { SESSION_ID: "sess_usr_cli", ZONE: "Q" } },
+        }),
+      };
+      const purchaseResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          Status: "200",
+          Error: null,
+          Data: { Datas: {} },
+        }),
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(loginResponse).mockResolvedValueOnce(purchaseResponse)
+      );
+
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      process.argv = [
+        "node",
+        "/path/to/register-expense.ts",
+        "--date",
+        "2026-02-28",
+        "--amount",
+        "45000",
+        "--vendor",
+        "스타벅스강남점",
+        "--description",
+        "거래처 미팅 식대",
+        "--user",
+        "홍길동",
+        "--account-code",
+        "접대비",
+      ];
+
+      await import("../register-expense.js");
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(logSpy).toHaveBeenCalled();
+      const output = JSON.parse(logSpy.mock.calls[0][0]);
+      expect(output.success).toBe(true);
+      expect(output.user).toBe("홍길동");
+      expect(output.description).toBe("거래처 미팅 식대");
     });
 
     it("handles --vat-excluded flag", async () => {
