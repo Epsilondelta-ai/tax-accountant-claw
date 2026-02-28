@@ -12,15 +12,20 @@
     "calc:insurance": "tsx scripts/calc-insurance.ts",
     "calendar": "tsx scripts/tax-calendar.ts",
     "ecount:test": "tsx scripts/ecount-client.ts --test",
-    "hometax:guide": "tsx scripts/hometax-guide.ts"
+    "hometax:guide": "tsx scripts/hometax-guide.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "dotenv": "^16.4.7"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=20.0.0"
