@@ -1,0 +1,28 @@
+{
+  "name": "tax-accountant-claw",
+  "version": "0.1.0",
+  "description": "OpenClaw skill for Korean corporate tax automation with Ecount ERP integration",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "calc:vat": "tsx scripts/calc-vat.ts",
+    "calc:withholding": "tsx scripts/calc-withholding.ts",
+    "calc:corporate": "tsx scripts/calc-corporate-tax.ts",
+    "calc:insurance": "tsx scripts/calc-insurance.ts",
+    "calendar": "tsx scripts/tax-calendar.ts",
+    "ecount:test": "tsx scripts/ecount-client.ts --test",
+    "hometax:guide": "tsx scripts/hometax-guide.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
