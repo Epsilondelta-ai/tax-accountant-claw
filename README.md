@@ -15,6 +15,7 @@
 | **세무 일정 관리** | 다음 기한 D-day, 월별 브리핑, 가산세 경고 |
 | **홈택스 신고 안내** | 부가세/원천세/법인세 신고 절차 단계별 가이드 |
 | **자동 알림** | 크론잡으로 원천세(매월), 부가세(분기), 법인세(연) 기한 사전 알림 |
+| **법인카드 증빙 등록** | 카드 승인 문자/영수증 사진 → 이카운트 매입전표 자동 등록 |
 
 ## 빠른 시작
 
@@ -105,6 +106,14 @@ npx tsx scripts/tax-calendar.ts --month 2026-03
 npx tsx scripts/hometax-guide.ts --type vat
 ```
 
+```bash
+# 카드 승인 문자 파싱
+npx tsx scripts/parse-card-notification.ts --text "[Web발신] [신한카드] 홍*동님 02/28 15:30 45,000원 스타벅스강남점 승인"
+
+# 매입전표 등록 (카드 결제 증빉)
+npx tsx scripts/register-expense.ts --date 2026-02-28 --amount 45000 --vendor 스타벅스강남점 --description "커피 회의비"
+```
+
 ## 자동 알림 설정 (크론잡)
 
 세무 기한을 놓치지 않도록 자동 알림을 설정할 수 있습니다.
@@ -133,13 +142,16 @@ tax-accountant-claw/
 │   ├── calc-corporate-tax.ts   # 법인세 계산기
 │   ├── calc-insurance.ts       # 4대보험 계산기
 │   ├── tax-calendar.ts         # 세무 일정 조회
-│   └── hometax-guide.ts        # 홈택스 신고 가이드
+│   ├── hometax-guide.ts        # 홈택스 신고 가이드
+│   ├── parse-card-notification.ts  # 카드 승인 문자 파서
+│   └── register-expense.ts     # 매입전표 등록 (증빙→이카운트)
 └── references/
     ├── tax-rates-2026.md       # 2026 법인세 세율표
     ├── insurance-rates-2026.md # 2026 4대보험 요율표
     ├── withholding-table-2026.md # 근로소득 간이세액표
     ├── vat-rules.md            # 부가세 신고 규칙
-    └── tax-calendar-2026.md    # 2026 세무 캘린더
+    ├── tax-calendar-2026.md    # 2026 세무 캘린더
+    └── card-notification-formats.md # 카드사별 승인 문자 포맷
 ```
 
 ## 2026년 주요 세율
@@ -164,6 +176,7 @@ tax-accountant-claw/
 | 세무 일정 자동 알림 | 복잡한 세무조정 (조정계산서 등) |
 | 4대보험 금액 계산 | 개인 소득세 (법인 전용) |
 | 홈택스 신고 절차 안내 | 한국 외 세무 |
+| 법인카드 증빉 → 이카운트 매입전표 등록 | OCR/직접 카드사 연동 (문자/사진 기반) |
 
 > 복잡한 세무 판단이 필요한 경우 세무사 상담을 추천합니다.
 > 기장대리 비용은 월 10~15만원 수준으로, 이 봇과 병행하면 대표가 세무에 쓰는 시간을 거의 0으로 줄일 수 있습니다.

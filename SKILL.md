@@ -90,6 +90,42 @@ tsx {baseDir}/scripts/hometax-guide.ts --type withholding
 tsx {baseDir}/scripts/hometax-guide.ts --type corporate
 ```
 
+### 7. 법인카드 증빙 등록
+- 법인카드 사용 시 카드사 승인 문자 또는 영수증 사진을 받아 이카운트에 매입전표 자동 등록
+- 카드 문자 → parse-card-notification.ts로 파싱 → 카드사, 금액, 가맹점, 날짜 추출
+- 영수증 사진 → LLM vision으로 직접 읽어서 품목, 금액, 가맹점, 날짜 추출
+- 추출된 정보 확인 후 register-expense.ts로 이카운트 매입전표 등록
+- 공급가액/부가세는 총액 기준 자동 분리 (총액 / 1.1)
+
+카드 승인 문자 파싱:
+```bash
+tsx {baseDir}/scripts/parse-card-notification.ts --text "[Web발신] [신한카드] 홍*동님 02/28 15:30 45,000원 스타벅스강남점 승인"
+```
+
+매입전표 등록:
+```bash
+tsx {baseDir}/scripts/register-expense.ts --date 2026-02-28 --amount 45000 --vendor 스타벅스강남점 --description "커피 회의비" --card-company 신한카드 --approval-number 123456
+```
+
+#### 처리 흐름
+
+**카드 문자 증빙:**
+1. 사용자가 카드 승인 문자를 메신저로 전달
+2. parse-card-notification.ts로 문자 파싱 (카드사, 금액, 가맹점, 날짜, 승인번호 추출)
+3. 파싱 결과를 사용자에게 확인 요청 ("스타벅스강남점에서 45,000원 맞나요?")
+4. 확인되면 register-expense.ts로 이카운트 매입전표 등록
+5. 등록 결과 안내
+
+**영수증 사진 증빙:**
+1. 사용자가 영수증 사진을 메신저로 전달
+2. LLM vision으로 영수증 이미지 분석 (가맹점명, 날짜, 품목, 금액 추출)
+3. 추출된 정보를 사용자에게 확인 요청
+4. 확인되면 register-expense.ts로 이카운트 매입전표 등록
+5. 등록 결과 안내
+
+> **참고**: OpenClaw 일부 채널에서 이미지 전달 관련 버그가 있을 수 있습니다 (이슈 #23452).
+> 이미지가 전달되지 않으면 카드 승인 문자를 텍스트로 보내는 방법을 안내하세요.
+
 ## 참고 자료 (references)
 
 스크립트 실행 전에 정확한 세율·요율을 확인하려면:
@@ -99,6 +135,7 @@ tsx {baseDir}/scripts/hometax-guide.ts --type corporate
 - 간이세액표: `{baseDir}/references/withholding-table-2026.md`
 - 부가세 규칙: `{baseDir}/references/vat-rules.md`
 - 세무 캘린더: `{baseDir}/references/tax-calendar-2026.md`
+- 카드사 문자 포맷: `{baseDir}/references/card-notification-formats.md`
 
 ## 사용 시기
 
@@ -108,6 +145,7 @@ tsx {baseDir}/scripts/hometax-guide.ts --type corporate
 - "4대보험", "국민연금", "건강보험", "고용보험" 등 사회보험 관련
 - "신고", "홈택스", "기한", "납부" 등 세무 신고 관련
 - "다음 달 뭐 해야 해?", "세금 일정" 등 세무 일정 질문
+- "법인카드", "카드 결제", "영수증", "증빉", "경비 등록" 등 비용 증빉 관련
 
 ### 이 스킬을 사용하지 말아야 할 때
 - 개인 소득세 (이 스킬은 법인 전용)
@@ -142,6 +180,13 @@ tsx {baseDir}/scripts/hometax-guide.ts --type corporate
 2. 또는 사용자에게 당기순이익 물어보기
 3. calc-corporate-tax.ts로 추정 세액 산출
 4. "추정치"임을 명시 + 세무사 확인 권장
+
+### "법인카드로 커피 샀는데 45,000원 결제했어"
+1. 카드 승인 문자 또는 영수증 사진이 함께 전달되었는지 확인
+2. 문자가 있으면 parse-card-notification.ts로 파싱, 사진이면 vision으로 분석
+3. "스타벅스강남점에서 45,000원(공급가 40,909원 + 부가세 4,091원), 이카운트에 등록할까요?"
+4. 확인되면 register-expense.ts로 등록
+5. "등록 완료! 날짜: 2/28, 가맹점: 스타벅스강남점, 공급가: 40,909원, 부가세: 4,091원"
 
 ## 크론 알림 설정
 

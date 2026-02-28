@@ -145,6 +145,113 @@ export async function getPayroll(
   });
 }
 
+// ─── Purchase Slip Types ──────────────────────────────────────────────────────
+
+export interface PurchaseSlipItem {
+  productCode?: string;
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  amount: number;
+  vatAmount?: number;
+  accountCode?: string;
+  warehouseCode?: string;
+  remark?: string;
+}
+
+export interface CreatePurchaseSlipRequest {
+  slipDate: string;
+  vendorCode?: string;
+  vendorName?: string;
+  items: PurchaseSlipItem[];
+  cardCompanyCode?: string;
+  cardNumber?: string;
+  approvalNumber?: string;
+  approvalDate?: string;
+  memo?: string;
+}
+
+export interface EcountSaveResponse {
+  Status: string;
+  Error: string | null;
+  Data: { Datas: Record<string, unknown> } | null;
+}
+
+export async function createPurchaseSlip(
+  sessionId: string,
+  zone: string,
+  request: CreatePurchaseSlipRequest
+): Promise<EcountSaveResponse> {
+  const url = `${baseUrl(zone)}/OAPI/V2/Purchases/SavePurchases?SESSION_ID=${sessionId}`;
+
+  const bulkDatas: Record<string, string> = {
+    SESSION_ID: sessionId,
+    SLIP_DATE: request.slipDate.replace(/-/g, ""),
+    WH_CD: request.items[0]?.warehouseCode ?? "100",
+    PROD_CD: request.items[0]?.productCode ?? "EXPENSE",
+    PROD_DES: request.items[0]?.description ?? "",
+    QTY: String(request.items[0]?.quantity ?? 1),
+    PRICE: String(request.items[0]?.unitPrice ?? request.items[0]?.amount ?? 0),
+    AMT: String(request.items[0]?.amount ?? 0),
+    VAT_AMT: String(request.items[0]?.vatAmount ?? 0),
+  };
+
+  if (request.items[0]?.accountCode) {
+    bulkDatas.ACCT_CD = request.items[0].accountCode;
+  }
+  if (request.items[0]?.remark) {
+    bulkDatas.REMARK = request.items[0].remark;
+  }
+  if (request.vendorCode) {
+    bulkDatas.CUST_CD = request.vendorCode;
+  }
+  if (request.vendorName) {
+    bulkDatas.CUST_NM = request.vendorName;
+  }
+  if (request.cardCompanyCode) {
+    bulkDatas.CARD_CD = request.cardCompanyCode;
+  }
+  if (request.cardNumber) {
+    bulkDatas.CARD_NO = request.cardNumber;
+  }
+  if (request.approvalNumber) {
+    bulkDatas.APPROVAL_NO = request.approvalNumber;
+  }
+  if (request.approvalDate) {
+    bulkDatas.APPROVAL_DATE = request.approvalDate.replace(/-/g, "");
+  }
+  if (request.memo) {
+    bulkDatas.REMARK = request.memo;
+  }
+
+  const body = {
+    PurchasesList: [
+      {
+        Line: "0",
+        BulkDatas: bulkDatas,
+      },
+    ],
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Purchase slip creation failed: HTTP ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as EcountSaveResponse;
+
+  if (data.Status !== "200" && data.Status !== "200 OK") {
+    throw new Error(`Purchase slip creation failed: ${data.Error ?? data.Status}`);
+  }
+
+  return data;
+}
+
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
 function parseArgs(): {
