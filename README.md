@@ -29,31 +29,24 @@ openclaw onboard
 ### 2. 스킬 설치
 
 ```bash
-# 방법 A: Git URL로 설치 (추천)
-openclaw skills install https://github.com/Epsilondelta-ai/tax-accountant-claw.git
+git clone https://github.com/Epsilondelta-ai/tax-accountant-claw.git
+cd tax-accountant-claw
+npm install
 ```
 
-```bash
-# 방법 B: 로컬 디렉토리에서 설치
-git clone https://github.com/Epsilondelta-ai/tax-accountant-claw.git
-openclaw skills install ./tax-accountant-claw
-```
+설치 후 OpenClaw 스킬 디렉토리에 등록합니다:
 
 ```bash
-# 방법 C: 심볼릭 링크 (개발용)
-git clone https://github.com/Epsilondelta-ai/tax-accountant-claw.git
-ln -s "$(pwd)/tax-accountant-claw" ~/.openclaw/skills/tax-accountant
+# 방법 A: 복사
+cp -r . ~/.openclaw/skills/tax-accountant/
+
+# 방법 B: 심볼릭 링크 (개발용 — 코드 수정 시 바로 반영)
+ln -s "$(pwd)" ~/.openclaw/skills/tax-accountant
 ```
 
 ### 3. 이카운트 API 설정
 
-스킬 디렉토리에서 `.env` 파일을 생성합니다:
-
 ```bash
-# 스킬 디렉토리 확인
-openclaw skills info tax-accountant
-
-# .env 설정 (스킬 디렉토리에서)
 cp .env.example .env
 ```
 
@@ -68,13 +61,7 @@ ECOUNT_ZONE=존코드
 
 > 이카운트 API 키는 [시스템관리 > 보안관리 > API 인증키 관리]에서 발급받을 수 있습니다.
 
-### 4. 의존성 설치
-
-```bash
-npm install
-```
-
-### 5. 스킬 확인 및 사용
+### 4. 스킬 확인 및 사용
 
 ```bash
 openclaw skills list  # tax-accountant가 보여야 함
